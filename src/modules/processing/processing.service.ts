@@ -22,17 +22,18 @@ export class ProcessingService {
 
             // Step 1: Analyze Metadata (Privacy Audit)
             const tags = await exiftool.read(inputPath) as any;
-            logger.info({ msg: 'Detected Tags', tags });
+            // logger.info({ msg: 'Detected Tags', tags }); // Verbose logging
+
+            // Deep scan for AI signatures in ANY tag
+            const aiKeywords = [/Midjourney/i, /Stable Diffusion/i, /DALL\.E/i, /Steps: \d+/, /Cfg scale:/i, /Negative prompt:/i];
+            const hasAiSignature = Object.values(tags).some(val =>
+                typeof val === 'string' && aiKeywords.some(regex => regex.test(val))
+            );
 
             const report = {
                 gps: (tags.GPSLatitude || tags.GPSLongitude) ? true : false,
-                device: tags.Model ? `${tags.Make || ''} ${tags.Model}`.trim() : null,
-                // Check common AI signatures
-                ai: (
-                    (tags.Software && /Midjourney|Stable Diffusion/i.test(String(tags.Software))) ||
-                    (tags.Parameters && /Steps:|Cfg scale/i.test(String(tags.Parameters))) ||
-                    (tags['PNG:Parameters'] && /Steps:|Cfg scale/i.test(String(tags['PNG:Parameters'])))
-                ) ? true : false
+                device: (tags.Make || tags.Model) ? `${tags.Make || ''} ${tags.Model || ''}`.trim() : null,
+                ai: hasAiSignature
             };
 
             // Step 2: Strip all tags using command line argument directly
