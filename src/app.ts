@@ -2,6 +2,7 @@ import Fastify from 'fastify';
 import { config } from './config';
 import { logger } from './core/logger';
 
+import cors from '@fastify/cors';
 import multipart from '@fastify/multipart';
 import { uploadRoutes } from './modules/upload/upload.routes';
 
@@ -17,6 +18,13 @@ export const buildApp = () => {
                 },
             },
         },
+    });
+
+    server.register(cors, {
+        origin: true, // Allow all origins (for now, to support IP access)
+        credentials: true,
+        allowedHeaders: ['Content-Type', 'Authorization'],
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
     });
 
     server.register(multipart);
