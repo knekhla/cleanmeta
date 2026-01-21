@@ -92,150 +92,130 @@ export default function DragDrop() {
     };
 
     return (
-        <div className="w-full max-w-xl mx-auto space-y-8">
+        <div className="w-full max-w-2xl mx-auto space-y-8 relative z-10">
             <div
                 className={clsx(
-                    "relative border-2 border-dashed rounded-3xl p-12 text-center transition-all duration-300 ease-in-out cursor-pointer overflow-hidden group",
-                    isDragging ? "border-blue-500 bg-blue-50 scale-[1.02]" : "border-gray-300 hover:border-gray-400 hover:bg-gray-50",
-                    file ? "bg-white border-blue-200" : "bg-white"
+                    "relative border border-white/10 rounded-3xl p-16 text-center transition-all duration-500 ease-out cursor-pointer overflow-hidden group backdrop-blur-xl",
+                    isDragging ? "bg-cyan-500/10 border-cyan-500/50 shadow-[0_0_50px_-10px_rgba(6,182,212,0.3)]" : "bg-white/5 hover:bg-white/10 hover:border-white/20",
+                    file && !uploading && !processedUrl ? "border-purple-500/50 bg-purple-500/5" : ""
                 )}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
                 onDragOver={handleDrag}
                 onDrop={handleDrop}
             >
+                {/* Scanner Light Effect */}
+                <div className={clsx(
+                    "absolute inset-x-0 h-1 bg-cyan-400 blur-sm transition-all duration-[2000ms] ease-in-out opacity-0",
+                    uploading && "animate-[scan_2s_ease-in-out_infinite] opacity-100"
+                )} />
+
                 <input
                     type="file"
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50"
                     onChange={handleChange}
                     accept="image/*"
                     disabled={uploading || !!processedUrl}
                 />
 
-                <div className="pointer-events-none relative z-20 flex flex-col items-center justify-center space-y-4">
+                <div className="pointer-events-none relative z-20 flex flex-col items-center justify-center space-y-6">
                     {uploading ? (
                         <>
-                            <div className="p-4 bg-blue-50 rounded-full animate-pulse">
-                                <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+                            <div className="relative">
+                                <div className="absolute inset-0 bg-cyan-500 blur-xl opacity-20 animate-pulse" />
+                                <Loader2 className="w-16 h-16 text-cyan-400 animate-spin relative z-10" />
                             </div>
-                            <p className="text-gray-500 font-medium">Scrubbing metadata...</p>
+                            <div className="space-y-2">
+                                <p className="text-cyan-400 font-mono text-lg tracking-widest animate-pulse">PROCESSING_DATA...</p>
+                                <p className="text-slate-500 text-sm">Stripping coordinates & AI signatures</p>
+                            </div>
                         </>
                     ) : processedUrl ? (
-                        <>
-                            <div className="p-4 bg-green-50 rounded-full">
-                                <CheckCircle className="w-10 h-10 text-green-600" />
+                        <div className="animate-in zoom-in-50 duration-300">
+                            <div className="relative mb-6 mx-auto w-20 h-20 flex items-center justify-center">
+                                <div className="absolute inset-0 bg-green-500/20 rounded-full blur-xl animate-pulse" />
+                                <CheckCircle className="w-20 h-20 text-green-400 relative z-10" />
                             </div>
-                            <div>
-                                <p className="text-gray-900 font-semibold text-lg">Clean & Ready!</p>
-                                <div className="flex gap-4 mt-6 pointer-events-auto relative z-30 justify-center">
-                                    <a
-                                        href={processedUrl}
-                                        download={`clean_${file?.name}`}
-                                        className="inline-flex items-center px-6 py-2.5 bg-green-600 text-white rounded-full font-medium hover:bg-green-700 transition-colors shadow-lg shadow-green-600/20"
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        <Download className="w-4 h-4 mr-2" />
-                                        Download
-                                    </a>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setFile(null);
-                                            setProcessedUrl(null);
-                                            setReport(null);
-                                        }}
-                                        className="px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-full font-medium hover:bg-gray-50 transition-colors"
-                                    >
-                                        New File
-                                    </button>
-                                </div>
+
+                            <h3 className="text-2xl font-bold text-white mb-2 tracking-tight">System Clean.</h3>
+                            <p className="text-slate-400 mb-8">Metadata effectively neutralized.</p>
+
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center pointer-events-auto relative z-30">
+                                <a
+                                    href={processedUrl}
+                                    download={`clean_${file?.name}`}
+                                    className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-bold tracking-wide hover:brightness-110 transition-all shadow-[0_0_30px_-5px_rgba(6,182,212,0.4)]"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <Download className="w-5 h-5 mr-2" />
+                                    DOWNLOAD_CLEAN
+                                </a>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setFile(null);
+                                        setProcessedUrl(null);
+                                        setReport(null);
+                                    }}
+                                    className="px-8 py-4 bg-white/5 border border-white/10 text-white rounded-xl font-medium hover:bg-white/10 transition-colors backdrop-blur-md"
+                                >
+                                    NEW_FILE
+                                </button>
                             </div>
-                        </>
+                        </div>
                     ) : file ? (
-                        <>
-                            <div className="bg-blue-50 p-4 rounded-2xl mb-2 relative group-hover:scale-110 transition-transform">
-                                <FileImage className="w-10 h-10 text-blue-600" />
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+                            <div className="w-20 h-20 mx-auto bg-purple-500/20 rounded-2xl flex items-center justify-center mb-4 border border-purple-500/30">
+                                <FileImage className="w-10 h-10 text-purple-400" />
                             </div>
-                            <div>
-                                <p className="text-lg font-semibold text-gray-900">{file.name}</p>
-                                <p className="text-sm text-gray-500 mt-1">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                            </div>
-                            <div className="pt-6 pointer-events-auto relative z-30">
+                            <div className="space-y-4">
+                                <div>
+                                    <p className="text-xl font-bold text-white tracking-tight">{file.name}</p>
+                                    <p className="text-sm text-purple-300/60 font-mono mt-1">{(file.size / 1024 / 1024).toFixed(2)} MB DETECTED</p>
+                                </div>
+
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation(); // prevent triggering input
                                         uploadFile();
                                     }}
-                                    className="px-8 py-3 bg-blue-600 text-white rounded-full font-semibold hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl shadow-blue-600/20 active:scale-95"
+                                    className="pointer-events-auto relative z-50 w-full px-8 py-4 bg-white text-black text-lg font-bold rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)]"
                                 >
-                                    Clean Metadata
+                                    INITIATE CLEANSE
                                 </button>
                             </div>
-                        </>
+                        </div>
                     ) : (
                         <>
-                            <div className="bg-gray-50 p-4 rounded-2xl mb-2 group-hover:scale-110 transition-transform">
-                                <Upload className="w-10 h-10 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                            <div className="relative group-hover:scale-110 transition-transform duration-300">
+                                <div className="absolute inset-0 bg-blue-500/20 blur-2xl rounded-full" />
+                                <Upload className="w-16 h-16 text-slate-400 group-hover:text-cyan-400 transition-colors relative z-10" />
                             </div>
-                            <p className="text-lg font-medium text-gray-900">
-                                Drop your image here, or <span className="text-blue-600">click to browse</span>
-                            </p>
-                            <p className="text-sm text-gray-500 max-w-sm mx-auto">
-                                Supports JPG, PNG, WEBP. Files are processed securely in memory and deleted immediately.
-                            </p>
+                            <div className="space-y-2">
+                                <p className="text-2xl font-bold text-white tracking-tight">
+                                    Drop Target
+                                </p>
+                                <p className="text-slate-400">
+                                    or <span className="text-cyan-400 underline decoration-cyan-400/30 underline-offset-4 group-hover:decoration-cyan-400 transition-all">initiate manual upload</span>
+                                </p>
+                            </div>
+                            <div className="pt-4 flex gap-3 justify-center text-[10px] font-mono text-slate-600 uppercase tracking-widest">
+                                <span>JPG</span>
+                                <span className="text-slate-800">•</span>
+                                <span>PNG</span>
+                                <span className="text-slate-800">•</span>
+                                <span>WEBP</span>
+                            </div>
                         </>
                     )}
                 </div>
             </div>
 
-            {report && (
-                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm animate-in fade-in slide-in-from-bottom-4">
-                    <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                        🛡️ Privacy Report
-                    </h3>
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                            <span className="text-slate-600 text-sm font-medium">GPS Location</span>
-                            {report.gps ? (
-                                <span className="text-red-600 text-sm font-bold bg-red-100 px-3 py-1 rounded-full">REMOVED</span>
-                            ) : (
-                                <span className="text-slate-400 text-sm">None found</span>
-                            )}
-                        </div>
-                        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                            <span className="text-slate-600 text-sm font-medium">Device Info</span>
-                            {report.device ? (
-                                <div className="text-right">
-                                    <span className="text-red-600 text-sm font-bold bg-red-100 px-3 py-1 rounded-full block w-fit ml-auto">REMOVED</span>
-                                    <span className="text-xs text-slate-400 mt-1 block max-w-[200px] truncate">{report.device}</span>
-                                </div>
-                            ) : (
-                                <span className="text-slate-400 text-sm">None found</span>
-                            )}
-                        </div>
-                        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                            <span className="text-slate-600 text-sm font-medium">AI Prompts</span>
-                            {report.ai ? (
-                                <span className="text-red-600 text-sm font-bold bg-red-100 px-3 py-1 rounded-full">REMOVED</span>
-                            ) : (
-                                <span className="text-slate-400 text-sm">None found</span>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {error && (
-                <div className="mt-6 p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm text-center font-medium animate-in fade-in slide-in-from-top-2">
-                    {error}
+                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-center font-mono text-sm animate-in fade-in slide-in-from-top-2 backdrop-blur-md">
+                    ⚠ ERROR: {error}
                 </div>
             )}
-
-            <div className="text-center">
-                <p className="text-sm text-slate-500">
-                    Don't have a file? <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3003'}/api/sample`} className="text-blue-600 font-medium hover:underline">Download a sample image</a> with metadata
-                </p>
-            </div>
         </div>
     );
 }
