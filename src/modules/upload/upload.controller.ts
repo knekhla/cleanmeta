@@ -26,19 +26,25 @@ export class UploadController {
             logger.info({ msg: 'File uploaded to temp', inputPath });
 
             // Process image
-            const processedPath = await processingService.processImage(inputPath);
+            const { outputPath, report } = await processingService.processImage(inputPath);
 
             // Return processed image
             // For immediate download:
-            const buffer = await fs.readFile(processedPath);
+            const buffer = await fs.readFile(outputPath);
 
             // Cleanup temp files
             await Promise.all([
                 fs.unlink(inputPath).catch(() => { }),
-                fs.unlink(processedPath).catch(() => { })
+                fs.unlink(outputPath).catch(() => { })
             ]);
 
             reply.header('Content-Disposition', `attachment; filename="clean_${data.filename}"`);
+            reply.header('X-Clean-GPS', report.gps ? 'true' : 'false');
+            reply.header('X-Clean-Device', report.device ? encodeURIComponent(report.device) : '');
+            reply.header('X-Clean-AI', report.ai ? 'true' : 'false');
+
+            reply.header('Access-Control-Expose-Headers', 'X-Clean-GPS, X-Clean-Device, X-Clean-AI, Content-Disposition');
+
             reply.type(data.mimetype);
             return reply.send(buffer);
 

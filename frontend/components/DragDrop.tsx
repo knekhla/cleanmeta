@@ -9,8 +9,7 @@ export default function DragDrop() {
     const [isDragging, setIsDragging] = useState(false);
     const [file, setFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
-    const [processedUrl, setProcessedUrl] = useState<string | null>(null);
-    const [error, setError] = useState<string | null>(null);
+    const [report, setReport] = useState<{ gps: boolean; device: string | null; ai: boolean } | null>(null);
     const supabase = createClient();
 
     const handleDrag = useCallback((e: React.DragEvent) => {
@@ -32,6 +31,7 @@ export default function DragDrop() {
             setFile(e.dataTransfer.files[0]);
             setError(null);
             setProcessedUrl(null);
+            setReport(null);
         }
     }, []);
 
@@ -40,6 +40,7 @@ export default function DragDrop() {
             setFile(e.target.files[0]);
             setError(null);
             setProcessedUrl(null);
+            setReport(null);
         }
     };
 
@@ -48,6 +49,7 @@ export default function DragDrop() {
 
         setUploading(true);
         setError(null);
+        setReport(null);
 
         try {
             const { data: { session } } = await supabase.auth.getSession();
@@ -71,6 +73,12 @@ export default function DragDrop() {
                 throw new Error(errorData.message || 'Processing failed');
             }
 
+            // Capture Privacy Report Headers
+            const gps = res.headers.get('X-Clean-GPS') === 'true';
+            const device = res.headers.get('X-Clean-Device') ? decodeURIComponent(res.headers.get('X-Clean-Device')!) : null;
+            const ai = res.headers.get('X-Clean-AI') === 'true';
+            setReport({ gps, device, ai });
+
             const blob = await res.blob();
             const url = window.URL.createObjectURL(blob);
             setProcessedUrl(url);
@@ -82,7 +90,7 @@ export default function DragDrop() {
     };
 
     return (
-        <div className="w-full max-w-xl mx-auto">
+        <div className="w-full max-w-xl mx-auto space-y-8">
             <div
                 className={clsx(
                     "relative border-2 border-dashed rounded-3xl p-12 text-center transition-all duration-300 ease-in-out cursor-pointer overflow-hidden group",
@@ -132,6 +140,7 @@ export default function DragDrop() {
                                             e.stopPropagation();
                                             setFile(null);
                                             setProcessedUrl(null);
+                                            setReport(null);
                                         }}
                                         className="px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-full font-medium hover:bg-gray-50 transition-colors"
                                     >
@@ -176,6 +185,43 @@ export default function DragDrop() {
                     )}
                 </div>
             </div>
+
+            {report && (
+                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm animate-in fade-in slide-in-from-bottom-4">
+                    <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                        🛡️ Privacy Report
+                    </h3>
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                            <span className="text-slate-600 text-sm font-medium">GPS Location</span>
+                            {report.gps ? (
+                                <span className="text-red-600 text-sm font-bold bg-red-100 px-3 py-1 rounded-full">REMOVED</span>
+                            ) : (
+                                <span className="text-slate-400 text-sm">None found</span>
+                            )}
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                            <span className="text-slate-600 text-sm font-medium">Device Info</span>
+                            {report.device ? (
+                                <div className="text-right">
+                                    <span className="text-red-600 text-sm font-bold bg-red-100 px-3 py-1 rounded-full block w-fit ml-auto">REMOVED</span>
+                                    <span className="text-xs text-slate-400 mt-1 block max-w-[200px] truncate">{report.device}</span>
+                                </div>
+                            ) : (
+                                <span className="text-slate-400 text-sm">None found</span>
+                            )}
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                            <span className="text-slate-600 text-sm font-medium">AI Prompts</span>
+                            {report.ai ? (
+                                <span className="text-red-600 text-sm font-bold bg-red-100 px-3 py-1 rounded-full">REMOVED</span>
+                            ) : (
+                                <span className="text-slate-400 text-sm">None found</span>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {error && (
                 <div className="mt-6 p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm text-center font-medium animate-in fade-in slide-in-from-top-2">

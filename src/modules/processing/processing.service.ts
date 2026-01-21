@@ -12,7 +12,7 @@ export class ProcessingService {
      * @param inputPath Path to the input file
      * @returns Path to the processed file
      */
-    async processImage(inputPath: string): Promise<string> {
+    async processImage(inputPath: string): Promise<{ outputPath: string; report: any }> {
         const tempDir = os.tmpdir();
         const ext = path.extname(inputPath) || '.jpg';
         const outputPath = path.join(tempDir, `processed-${uuidv4()}${ext}`);
@@ -20,20 +20,25 @@ export class ProcessingService {
         try {
             logger.info({ msg: 'Starting metadata removal', inputPath });
 
-            // Step 1: Strip metadata using Exiftool (Robust removal)
-            // We overwrite the file or create a temp intermediate?
-            // Exiftool usually modifies locally or creates _original.
-            // Let's use Sharp for the final re-encoding which flushes most metadata anyway.
-            // But Exiftool is safer for hidden/custom tags.
+            // Step 1: Analyze Metadata (Privacy Audit)
+            const tags = await exiftool.read(inputPath) as any;
 
-            // We will read metadata first to log what we found (optional audit)
-            // const tags = await exiftool.read(inputPath);
+            const report = {
+                gps: (tags.GPSLatitude || tags.GPSLongitude) ? true : false,
+                device: tags.Model ? `${tags.Make || ''} ${tags.Model}`.trim() : null,
+                // Check common AI signatures
+                ai: (
+                    (tags.Software && /Midjourney|Stable Diffusion/i.test(String(tags.Software))) ||
+                    (tags.Parameters && /Steps:|Cfg scale/i.test(String(tags.Parameters))) ||
+                    (tags['PNG:Parameters'] && /Steps:|Cfg scale/i.test(String(tags['PNG:Parameters'])))
+                ) ? true : false
+            };
 
-            // Strip all tags using command line argument directly
+            // Step 2: Strip all tags using command line argument directly
             // Added -png:all= to specifically target Stable Diffusion/AI parameters in PNG chunks
             await exiftool.write(inputPath, {}, ['-all=', '-png:all=', '-overwrite_original']);
 
-            // Step 2: Re-encode with Sharp to sanitize image structure (remove hidden chunks)
+            // Step 3: Re-encode with Sharp to sanitize image structure (remove hidden chunks)
             // This is the "Privacy-First" guarantee: Re-create the image data.
             await sharp(inputPath)
                 .rotate()
@@ -41,8 +46,8 @@ export class ProcessingService {
                 // Density will default to 72 or image default, which is fine for web.
                 .toFile(outputPath);
 
-            logger.info({ msg: 'Image processed successfully', outputPath });
-            return outputPath;
+            logger.info({ msg: 'Image processed successfully', outputPath, report });
+            return { outputPath, report };
 
         } catch (error: any) {
             logger.error({
