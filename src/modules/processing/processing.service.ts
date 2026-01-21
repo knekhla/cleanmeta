@@ -22,7 +22,7 @@ export class ProcessingService {
 
             // Step 1: Analyze Metadata (Privacy Audit)
             const tags = await exiftool.read(inputPath) as any;
-            // logger.info({ msg: 'Detected Tags', tags }); // Verbose logging
+            logger.info({ msg: 'Detected Tags', tags }); // Verbose logging
 
             // Deep scan for AI signatures in ANY tag
             const aiKeywords = [/Midjourney/i, /Stable Diffusion/i, /DALL\.E/i, /Steps: \d+/, /Cfg scale:/i, /Negative prompt:/i];
