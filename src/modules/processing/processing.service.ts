@@ -44,8 +44,12 @@ export class ProcessingService {
             logger.info({ msg: 'Image processed successfully', outputPath });
             return outputPath;
 
-        } catch (error) {
-            logger.error({ msg: 'Error processing image', error });
+        } catch (error: any) {
+            logger.error({
+                msg: 'Error processing image',
+                error: error.message || error,
+                stack: error.stack
+            });
             throw error;
         }
     }
