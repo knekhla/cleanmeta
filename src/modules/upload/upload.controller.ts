@@ -49,6 +49,40 @@ export class UploadController {
             return reply.status(500).send({ error: 'Processing failed' });
         }
     }
+
+    async processBatch(req: FastifyRequest, reply: FastifyReply) {
+        const files = await req.files();
+        const jobs = [];
+
+        try {
+            for await (const part of files) {
+                if (!part.file) continue;
+
+                const tempDir = os.tmpdir();
+                const ext = path.extname(part.filename) || '.jpg';
+                const inputPath = path.join(tempDir, `batch-${uuidv4()}${ext}`);
+
+                await pipeline(part.file, createWriteStream(inputPath));
+
+                // Add to BullMQ
+                const job = await import('../jobs/queues').then(m => m.imageQueue.add('process-image', {
+                    inputPath,
+                    originalName: part.filename,
+                    mimetype: part.mimetype
+                }));
+
+                jobs.push({ jobId: job.id, originalName: part.filename });
+            }
+
+            return reply.send({
+                message: 'Batch processing started',
+                jobs
+            });
+        } catch (error) {
+            logger.error({ msg: 'Batch upload failed', error });
+            return reply.status(500).send({ error: 'Batch processing failed' });
+        }
+    }
 }
 
 export const uploadController = new UploadController();

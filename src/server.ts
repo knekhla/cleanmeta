@@ -1,5 +1,6 @@
 import { buildApp } from './app';
 import { config } from './config';
+import './modules/jobs/workers'; // Initialize workers
 
 const start = async () => {
     const server = buildApp();
