@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  app:
+    container_name: cleanmeta-app
+    build: .
+    restart: always
+    ports:
+      - "3003:3000" # Host Port 3003 -> Container Port 3000 
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    networks:
+      - cleanmeta-net
+      - root_default # Attach to Traefik network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cleanmeta.rule=Host(`cleanmeta.io`, `www.cleanmeta.io`)"
+      - "traefik.http.routers.cleanmeta.entrypoints=web,websecure"
+      - "traefik.http.routers.cleanmeta.tls.certresolver=myresolver" # Assuming standard 'myresolver' or 'letsencrypt'
+      - "traefik.http.services.cleanmeta.loadbalancer.server.port=3000"
+      - "traefik.docker.network=root_default"
+
+  redis:
+    image: redis:alpine
+    container_name: cleanmeta-redis
+    restart: always
+    networks:
+      - cleanmeta-net
+    volumes:
+      - redis_data:/data
+
+networks:
+  cleanmeta-net:
+    driver: bridge
+  root_default:
+    external: true
+
+volumes:
+  redis_data:
