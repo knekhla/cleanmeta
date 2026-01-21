@@ -55,17 +55,20 @@ export default function DragDrop() {
             const formData = new FormData();
             formData.append('file', file);
 
+            const headers: Record<string, string> = {};
+            if (session) {
+                headers['Authorization'] = `Bearer ${session.access_token}`;
+            }
+
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/process/single`, {
                 method: 'POST',
-                headers: {
-                    'Authorization': session ? `Bearer ${session.access_token}` : '',
-                },
+                headers,
                 body: formData,
             });
 
             if (!res.ok) {
-                if (res.status === 401) throw new Error('Please sign in to process images');
-                throw new Error('Processing failed');
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.message || 'Processing failed');
             }
 
             const blob = await res.blob();
