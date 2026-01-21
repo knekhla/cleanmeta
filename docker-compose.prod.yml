@@ -1,12 +1,11 @@
 version: '3.8'
 
 services:
+  # === Backend Service ===
   app:
     container_name: cleanmeta-app
     build: .
     restart: always
-    ports:
-      - "3003:3000" # Host Port 3003 -> Container Port 3000 
     environment:
       - NODE_ENV=production
       - PORT=3000
@@ -18,15 +17,37 @@ services:
       - redis
     networks:
       - cleanmeta-net
-      - root_default # Attach to Traefik network
+      - root_default
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.cleanmeta.rule=Host(`cleanmeta.io`, `www.cleanmeta.io`)"
-      - "traefik.http.routers.cleanmeta.entrypoints=web,websecure"
-      - "traefik.http.routers.cleanmeta.tls.certresolver=myresolver" # Assuming standard 'myresolver' or 'letsencrypt'
-      - "traefik.http.services.cleanmeta.loadbalancer.server.port=3000"
+      # API Routing: Matches /api prefix
+      - "traefik.http.routers.cleanmeta-api.rule=Host(`cleanmeta.io`, `www.cleanmeta.io`) && PathPrefix(`/api`, `/health`)"
+      - "traefik.http.routers.cleanmeta-api.entrypoints=web,websecure"
+      - "traefik.http.routers.cleanmeta-api.tls.certresolver=myresolver"
+      - "traefik.http.services.cleanmeta-api.loadbalancer.server.port=3000"
       - "traefik.docker.network=root_default"
 
+  # === Frontend Service ===
+  frontend:
+    container_name: cleanmeta-frontend
+    build: ./frontend
+    restart: always
+    environment:
+      - NEXT_PUBLIC_API_URL=https://cleanmeta.io
+      - NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_KEY}
+    networks:
+      - root_default
+    labels:
+      - "traefik.enable=true"
+      # Web Routing: Matches everything else
+      - "traefik.http.routers.cleanmeta-web.rule=Host(`cleanmeta.io`, `www.cleanmeta.io`)"
+      - "traefik.http.routers.cleanmeta-web.entrypoints=web,websecure"
+      - "traefik.http.routers.cleanmeta-web.tls.certresolver=myresolver"
+      - "traefik.http.services.cleanmeta-web.loadbalancer.server.port=3000"
+      - "traefik.docker.network=root_default"
+
+  # === Redis Service ===
   redis:
     image: redis:alpine
     container_name: cleanmeta-redis
