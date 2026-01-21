@@ -27,7 +27,11 @@ export const buildApp = () => {
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
     });
 
-    server.register(multipart);
+    server.register(multipart, {
+        limits: {
+            fileSize: 50 * 1024 * 1024, // 50MB
+        }
+    });
     server.register(uploadRoutes);
 
     // Root Endpoint
