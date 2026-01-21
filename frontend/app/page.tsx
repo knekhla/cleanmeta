@@ -14,9 +14,6 @@ export default function Home() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
         <div className="text-center mb-16 space-y-6">
-          <div className="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-blue-50 text-blue-600 text-sm font-medium mb-4 ring-1 ring-blue-100">
-            Now supporting AI Prompt Removal
-          </div>
           <h1 className="text-5xl lg:text-7xl font-extrabold tracking-tight text-slate-900 pb-2 bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
             Metadata. <span className="text-blue-600">Gone.</span>
           </h1>
