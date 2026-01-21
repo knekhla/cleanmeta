@@ -230,6 +230,12 @@ export default function DragDrop() {
                     {error}
                 </div>
             )}
+
+            <div className="text-center">
+                <p className="text-sm text-slate-500">
+                    Don't have a file? <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3003'}/api/sample`} className="text-blue-600 font-medium hover:underline">Download a sample image</a> with metadata
+                </p>
+            </div>
         </div>
     );
 }

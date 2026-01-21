@@ -68,6 +68,28 @@ export class ProcessingService {
             // ignore
         }
     }
+
+    async generateSampleImage(): Promise<string> {
+        const tempDir = os.tmpdir();
+        const outputPath = path.join(tempDir, `sample-${uuidv4()}.jpg`);
+
+        // precise 1x1 pixel red jpeg image base64
+        const base64Image = '/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=';
+
+        await fs.writeFile(outputPath, Buffer.from(base64Image, 'base64'));
+
+        // Inject dummy metadata
+        await exiftool.write(outputPath, {
+            GPSLatitude: 48.8566,
+            GPSLongitude: 2.3522,
+            Software: 'Stable Diffusion v1.5', // AI Trigger
+            Make: 'Apple',
+            Model: 'iPhone 15 Pro Test',
+            UserComment: 'This is a sample image to test CleanMeta privacy report.'
+        });
+
+        return outputPath;
+    }
 }
 
 export const processingService = new ProcessingService();

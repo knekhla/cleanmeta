@@ -89,6 +89,23 @@ export class UploadController {
             return reply.status(500).send({ error: 'Batch processing failed' });
         }
     }
+
+    async getSample(req: FastifyRequest, reply: FastifyReply) {
+        try {
+            const samplePath = await processingService.generateSampleImage();
+            const buffer = await fs.readFile(samplePath);
+
+            // Cleanup async
+            fs.unlink(samplePath).catch(() => { });
+
+            reply.header('Content-Disposition', 'attachment; filename="cleanmeta_sample_with_metadata.jpg"');
+            reply.type('image/jpeg');
+            return reply.send(buffer);
+        } catch (error) {
+            logger.error({ msg: 'Failed to generate sample', error });
+            return reply.status(500).send({ error: 'Failed to generate sample' });
+        }
+    }
 }
 
 export const uploadController = new UploadController();
