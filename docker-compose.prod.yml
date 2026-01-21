@@ -6,6 +6,8 @@ services:
     container_name: cleanmeta-app
     build: .
     restart: always
+    ports:
+      - "3003:3000"
     environment:
       - NODE_ENV=production
       - PORT=3000

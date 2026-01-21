@@ -30,15 +30,15 @@ export class ProcessingService {
             // const tags = await exiftool.read(inputPath);
 
             // Strip all tags using command line argument directly
-            await exiftool.write(inputPath, {}, ['-all=', '-overwrite_original']);
+            // Added -png:all= to specifically target Stable Diffusion/AI parameters in PNG chunks
+            await exiftool.write(inputPath, {}, ['-all=', '-png:all=', '-overwrite_original']);
 
             // Step 2: Re-encode with Sharp to sanitize image structure (remove hidden chunks)
             // This is the "Privacy-First" guarantee: Re-create the image data.
             await sharp(inputPath)
-                .rotate() // Auto-rotate based on EXIF before stripping? No, we just stripped it.
-                // Wait, if we strip EXIF first, we lose rotation data.
-                // Standard practice: Read rotation -> Strip -> Apply rotation -> Re-encode.
-                .withMetadata({ density: 72 }) // clear metadata but keep density for standard display
+                .rotate()
+                // Removed .withMetadata() to ensure absolutely NO metadata is carried over.
+                // Density will default to 72 or image default, which is fine for web.
                 .toFile(outputPath);
 
             logger.info({ msg: 'Image processed successfully', outputPath });
