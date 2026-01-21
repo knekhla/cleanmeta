@@ -15,14 +15,14 @@ export const batchWorker = new Worker('image-processing', async (job: Job) => {
 
     try {
         // Process image
-        const processedPath = await processingService.processImage(inputPath);
+        const { outputPath } = await processingService.processImage(inputPath);
 
         // In a real batch scenario, we might upload to S3 or notify user here.
         // For now, we assume "processing" is the goal.
 
         // Example: Move processed file to final destination if specified
         if (outputPath) {
-            await fs.rename(processedPath, outputPath);
+            await fs.rename(outputPath, job.data.outputPath || outputPath);
         } else {
             // If no output path, maybe we just leave it for now (or upload logic goes here)
             // Cleanup temp processed file to avoid filling disk if not moved
