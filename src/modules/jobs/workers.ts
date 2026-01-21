@@ -26,10 +26,10 @@ export const batchWorker = new Worker('image-processing', async (job: Job) => {
         } else {
             // If no output path, maybe we just leave it for now (or upload logic goes here)
             // Cleanup temp processed file to avoid filling disk if not moved
-            await processingService.cleanup(processedPath);
+            await processingService.cleanup(outputPath);
         }
 
-        return { success: true, processedPath };
+        return { success: true, outputPath };
     } catch (error) {
         logger.error({ msg: 'Job failed', jobId: job.id, error });
         throw error;

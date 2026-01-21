@@ -9,6 +9,8 @@ export default function DragDrop() {
     const [isDragging, setIsDragging] = useState(false);
     const [file, setFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
+    const [processedUrl, setProcessedUrl] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
     const [report, setReport] = useState<{ gps: boolean; device: string | null; ai: boolean } | null>(null);
     const supabase = createClient();
 
