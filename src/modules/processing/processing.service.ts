@@ -22,6 +22,7 @@ export class ProcessingService {
 
             // Step 1: Analyze Metadata (Privacy Audit)
             const tags = await exiftool.read(inputPath) as any;
+            logger.info({ msg: 'Detected Tags', tags });
 
             const report = {
                 gps: (tags.GPSLatitude || tags.GPSLongitude) ? true : false,
