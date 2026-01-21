@@ -25,8 +25,8 @@ export class UploadController {
             await pipeline(data.file, createWriteStream(inputPath));
             logger.info({ msg: 'File uploaded to temp', inputPath });
 
-            // Process image
-            const { outputPath, report } = await processingService.processImage(inputPath);
+            // Process file (Image or Video)
+            const { outputPath, report } = await processingService.processFile(inputPath, data.mimetype);
 
             // Return processed image
             // For immediate download:

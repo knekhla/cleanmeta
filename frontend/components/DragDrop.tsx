@@ -114,7 +114,7 @@ export default function DragDrop() {
                     type="file"
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50"
                     onChange={handleChange}
-                    accept="image/*"
+                    accept="image/*,video/*"
                     disabled={uploading || !!processedUrl}
                 />
 
@@ -204,7 +204,9 @@ export default function DragDrop() {
                                 <span className="text-slate-800">•</span>
                                 <span>PNG</span>
                                 <span className="text-slate-800">•</span>
-                                <span>WEBP</span>
+                                <span>MP4</span>
+                                <span className="text-slate-800">•</span>
+                                <span>MOV</span>
                             </div>
                         </>
                     )}

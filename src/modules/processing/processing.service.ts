@@ -61,6 +61,40 @@ export class ProcessingService {
         }
     }
 
+    async processVideo(inputPath: string): Promise<{ outputPath: string; report: any }> {
+        const tempDir = os.tmpdir();
+        const ext = path.extname(inputPath) || '.mp4';
+        const outputPath = path.join(tempDir, `processed-${uuidv4()}${ext}`);
+
+        return new Promise((resolve, reject) => {
+            const ffmpeg = require('fluent-ffmpeg');
+            logger.info({ msg: 'Starting video metadata removal', inputPath });
+
+            ffmpeg(inputPath)
+                .outputOptions('-map_metadata', '-1')
+                .outputOptions('-c', 'copy')
+                .save(outputPath)
+                .on('end', () => {
+                    logger.info({ msg: 'Video processed successfully', outputPath });
+                    resolve({
+                        outputPath,
+                        report: { gps: false, device: null, ai: false }
+                    });
+                })
+                .on('error', (err: any) => {
+                    logger.error({ msg: 'Video processing error', err });
+                    reject(err);
+                });
+        });
+    }
+
+    async processFile(inputPath: string, mimetype: string): Promise<{ outputPath: string; report: any }> {
+        if (mimetype.startsWith('video/')) {
+            return this.processVideo(inputPath);
+        }
+        return this.processImage(inputPath);
+    }
+
     async cleanup(filePath: string) {
         try {
             await fs.unlink(filePath);

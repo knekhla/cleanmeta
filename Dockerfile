@@ -25,6 +25,7 @@ WORKDIR /app
 # exiftool-vendored usually bundles the binary, but having perl is often needed
 RUN apt-get update && apt-get install -y \
     perl \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/dist ./dist
