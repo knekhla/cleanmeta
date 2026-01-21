@@ -3,15 +3,6 @@ import Navbar from '@/components/Navbar';
 import DragDrop from '@/components/DragDrop';
 
 export const metadata: Metadata = {
-  title: 'CleanMeta - Remove Image Metadata & AI Prompts',
-  description: 'Privacy-first image metadata remover. Strip EXIF, GPS, and AI prompts (Stable Diffusion, Midjourney) instantly. No permanent storage.',
-};
-
-import { Metadata } from 'next';
-import Navbar from '@/components/Navbar';
-import DragDrop from '@/components/DragDrop';
-
-export const metadata: Metadata = {
   title: 'CleanMeta - Futuristic Privacy Shield',
   description: 'AI-Powered Metadata Neutralizer. Secure your digital footprint.',
 };
