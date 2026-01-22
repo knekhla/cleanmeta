@@ -34,7 +34,7 @@ export const buildApp = () => {
         }
     });
     server.register(uploadRoutes);
-    server.register(adminRoutes, { prefix: '/admin' });
+    server.register(adminRoutes, { prefix: '/api/admin' });
 
     // Root Endpoint
     server.get('/', async () => {

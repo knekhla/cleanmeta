@@ -42,7 +42,7 @@ export default function AdminDashboard() {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) return;
 
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/admin/stats`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/admin/stats`, {
                 headers: {
                     'Authorization': `Bearer ${session.access_token}`
                 }
@@ -53,7 +53,7 @@ export default function AdminDashboard() {
                 setStats(data);
             }
 
-            const logsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/admin/logs?limit=10`, {
+            const logsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/admin/logs?limit=10`, {
                 headers: {
                     'Authorization': `Bearer ${session.access_token}`
                 }

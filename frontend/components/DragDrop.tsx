@@ -55,7 +55,7 @@ export default function DragDrop() {
         formData.append('file', file);
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/upload/single`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/process/single`, {
                 method: 'POST',
                 body: formData,
             });
