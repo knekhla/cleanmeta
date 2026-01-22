@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { Upload, X, FileImage, Loader2, CheckCircle, Download } from 'lucide-react';
-import { createClient } from '@/lib/supabase';
+import React, { useState, useCallback } from 'react';
+import { Upload, File as FileIcon, CheckCircle, AlertCircle, ShieldCheck, Lock, Activity, Zap, Server, ChevronRight, Database, MapPin, Cpu, Laptop, Download, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 
 export default function DragDrop() {
@@ -11,213 +10,354 @@ export default function DragDrop() {
     const [uploading, setUploading] = useState(false);
     const [processedUrl, setProcessedUrl] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [report, setReport] = useState<{ gps: boolean; device: string | null; ai: boolean } | null>(null);
-    const supabase = createClient();
+    const [progress, setProgress] = useState(0);
 
-    const handleDrag = useCallback((e: React.DragEvent) => {
+    const onDragOver = useCallback((e: React.DragEvent) => {
         e.preventDefault();
-        e.stopPropagation();
-        if (e.type === 'dragenter' || e.type === 'dragover') {
-            setIsDragging(true);
-        } else if (e.type === 'dragleave') {
-            setIsDragging(false);
-        }
+        setIsDragging(true);
     }, []);
 
-    const handleDrop = useCallback((e: React.DragEvent) => {
+    const onDragLeave = useCallback((e: React.DragEvent) => {
         e.preventDefault();
-        e.stopPropagation();
         setIsDragging(false);
-
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            setFile(e.dataTransfer.files[0]);
-            setError(null);
-            setProcessedUrl(null);
-            setReport(null);
-        }
     }, []);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            setFile(e.target.files[0]);
-            setError(null);
-            setProcessedUrl(null);
-            setReport(null);
-        }
+    const onDrop = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+        const droppedFile = e.dataTransfer.files[0];
+        if (droppedFile) setFile(droppedFile);
+    }, []);
+
+    const onFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = e.target.files?.[0];
+        if (selectedFile) setFile(selectedFile);
     };
 
     const uploadFile = async () => {
         if (!file) return;
-
         setUploading(true);
         setError(null);
-        setReport(null);
+        setProgress(0);
+
+        // Simulation of progress based on Image 2
+        const interval = setInterval(() => {
+            setProgress(prev => {
+                if (prev >= 68) {
+                    clearInterval(interval);
+                    return 68;
+                }
+                return prev + 2;
+            });
+        }, 100);
+
+        const formData = new FormData();
+        formData.append('file', file);
 
         try {
-            const { data: { session } } = await supabase.auth.getSession();
-
-            const formData = new FormData();
-            formData.append('file', file);
-
-            const headers: Record<string, string> = {};
-            if (session) {
-                headers['Authorization'] = `Bearer ${session.access_token}`;
-            }
-
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/process/single`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/upload/single`, {
                 method: 'POST',
-                headers,
                 body: formData,
             });
 
-            if (!res.ok) {
-                const errorData = await res.json().catch(() => ({}));
-                throw new Error(errorData.message || 'Processing failed');
-            }
+            if (!response.ok) throw new Error('System Fail: Handshake Rejected');
 
-            // Capture Privacy Report Headers
-            const gps = res.headers.get('X-Clean-GPS') === 'true';
-            const device = res.headers.get('X-Clean-Device') ? decodeURIComponent(res.headers.get('X-Clean-Device')!) : null;
-            const ai = res.headers.get('X-Clean-AI') === 'true';
-            setReport({ gps, device, ai });
+            const data = await response.json();
 
-            const blob = await res.blob();
-            const url = window.URL.createObjectURL(blob);
-            setProcessedUrl(url);
+            // Wait for visual progress to hit 68 then finish
+            setTimeout(() => {
+                setProcessedUrl(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${data.url}`);
+                setUploading(false);
+            }, 2000);
+
         } catch (err: any) {
             setError(err.message);
-        } finally {
             setUploading(false);
+        } finally {
+            clearInterval(interval);
         }
     };
 
     return (
-        <div className="w-full max-w-2xl mx-auto space-y-8 relative z-10">
-            <div
-                className={clsx(
-                    "relative border border-white/10 rounded-3xl p-16 text-center transition-all duration-500 ease-out cursor-pointer overflow-hidden group backdrop-blur-xl",
-                    isDragging ? "bg-cyan-500/10 border-cyan-500/50 shadow-[0_0_50px_-10px_rgba(6,182,212,0.3)]" : "bg-white/5 hover:bg-white/10 hover:border-white/20",
-                    file && !uploading && !processedUrl ? "border-purple-500/50 bg-purple-500/5" : ""
-                )}
-                onDragEnter={handleDrag}
-                onDragLeave={handleDrag}
-                onDragOver={handleDrag}
-                onDrop={handleDrop}
-            >
-                {/* Scanner Light Effect */}
-                <div className={clsx(
-                    "absolute inset-x-0 h-1 bg-cyan-400 blur-sm transition-all duration-[2000ms] ease-in-out opacity-0",
-                    uploading && "animate-[scan_2s_ease-in-out_infinite] opacity-100"
-                )} />
+        <div className="w-full max-w-6xl mx-auto">
+            {!uploading && !processedUrl && !error && (
+                <div
+                    onDragOver={onDragOver}
+                    onDragLeave={onDragLeave}
+                    onDrop={onDrop}
+                    className={clsx(
+                        "relative flex flex-col items-center justify-center p-20 rounded-[32px] border-2 border-dashed transition-all duration-700 bg-zinc-900/10 backdrop-blur-3xl group min-h-[400px]",
+                        isDragging ? "border-cyan-400 bg-cyan-400/5 scale-[1.02]" : "border-white/5 hover:border-cyan-400/20"
+                    )}
+                >
+                    <input
+                        type="file"
+                        onChange={onFileSelect}
+                        className="hidden"
+                        id="fileInput"
+                        accept="image/*,video/*"
+                    />
 
-                <input
-                    type="file"
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50"
-                    onChange={handleChange}
-                    accept="image/*,video/*"
-                    disabled={uploading || !!processedUrl}
-                />
-
-                <div className="pointer-events-none relative z-20 flex flex-col items-center justify-center space-y-6">
-                    {uploading ? (
-                        <>
-                            <div className="relative">
-                                <div className="absolute inset-0 bg-cyan-500 blur-xl opacity-20 animate-pulse" />
-                                <Loader2 className="w-16 h-16 text-cyan-400 animate-spin relative z-10" />
+                    {file ? (
+                        <div className="text-center space-y-8 animate-in fade-in zoom-in duration-500">
+                            <div className="bg-cyan-500/10 p-8 rounded-2xl border border-cyan-500/20 inline-block">
+                                <FileIcon className="w-16 h-16 text-cyan-400" />
                             </div>
-                            <div className="space-y-2">
-                                <p className="text-cyan-400 font-mono text-lg tracking-widest animate-pulse">PROCESSING_DATA...</p>
-                                <p className="text-slate-500 text-sm">Stripping coordinates & AI signatures</p>
+                            <div>
+                                <h3 className="text-3xl font-bold text-white mb-2 uppercase italic tracking-tight">{file.name}</h3>
+                                <p className="text-zinc-500 font-mono text-xs uppercase tracking-[0.4em]">
+                                    Payload_Mass: <span className="text-cyan-400">{(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                                </p>
                             </div>
-                        </>
-                    ) : processedUrl ? (
-                        <div className="animate-in zoom-in-50 duration-300">
-                            <div className="relative mb-6 mx-auto w-20 h-20 flex items-center justify-center">
-                                <div className="absolute inset-0 bg-green-500/20 rounded-full blur-xl animate-pulse" />
-                                <CheckCircle className="w-20 h-20 text-green-400 relative z-10" />
-                            </div>
-
-                            <h3 className="text-2xl font-bold text-white mb-2 tracking-tight">System Clean.</h3>
-                            <p className="text-slate-400 mb-8">Metadata effectively neutralized.</p>
-
-                            <div className="flex flex-col sm:flex-row gap-4 justify-center pointer-events-auto relative z-30">
-                                <a
-                                    href={processedUrl}
-                                    download={`clean_${file?.name}`}
-                                    className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-bold tracking-wide hover:brightness-110 transition-all shadow-[0_0_30px_-5px_rgba(6,182,212,0.4)]"
-                                    onClick={(e) => e.stopPropagation()}
-                                >
-                                    <Download className="w-5 h-5 mr-2" />
-                                    DOWNLOAD_CLEAN
-                                </a>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setFile(null);
-                                        setProcessedUrl(null);
-                                        setReport(null);
-                                    }}
-                                    className="px-8 py-4 bg-white/5 border border-white/10 text-white rounded-xl font-medium hover:bg-white/10 transition-colors backdrop-blur-md"
-                                >
-                                    NEW_FILE
-                                </button>
-                            </div>
-                        </div>
-                    ) : file ? (
-                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
-                            <div className="w-20 h-20 mx-auto bg-purple-500/20 rounded-2xl flex items-center justify-center mb-4 border border-purple-500/30">
-                                <FileImage className="w-10 h-10 text-purple-400" />
-                            </div>
-                            <div className="space-y-4">
-                                <div>
-                                    <p className="text-xl font-bold text-white tracking-tight">{file.name}</p>
-                                    <p className="text-sm text-purple-300/60 font-mono mt-1">{(file.size / 1024 / 1024).toFixed(2)} MB DETECTED</p>
-                                </div>
-
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation(); // prevent triggering input
-                                        uploadFile();
-                                    }}
-                                    className="pointer-events-auto relative z-50 w-full px-8 py-4 bg-white text-black text-lg font-bold rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)]"
-                                >
-                                    INITIATE CLEANSE
-                                </button>
-                            </div>
+                            <button
+                                onClick={uploadFile}
+                                className="px-12 py-5 bg-cyan-400 hover:bg-cyan-300 text-black rounded font-bold uppercase text-xs tracking-[0.4em] transition-all shadow-[0_0_50px_rgba(0,242,255,0.2)]"
+                            >
+                                Start Deep Scrubbing
+                            </button>
                         </div>
                     ) : (
-                        <>
-                            <div className="relative group-hover:scale-110 transition-transform duration-300">
-                                <div className="absolute inset-0 bg-blue-500/20 blur-2xl rounded-full" />
-                                <Upload className="w-16 h-16 text-slate-400 group-hover:text-cyan-400 transition-colors relative z-10" />
+                        <div className="text-center space-y-8">
+                            <div className="bg-white/5 p-8 rounded-2xl border border-white/10 inline-block group-hover:border-cyan-500/40 transition-colors">
+                                <Upload className="w-16 h-16 text-zinc-500 group-hover:text-cyan-400 transition-colors" />
                             </div>
-                            <div className="space-y-2">
-                                <p className="text-2xl font-bold text-white tracking-tight">
-                                    Drop Target
-                                </p>
-                                <p className="text-slate-400">
-                                    or <span className="text-cyan-400 underline decoration-cyan-400/30 underline-offset-4 group-hover:decoration-cyan-400 transition-all">initiate manual upload</span>
+                            <div className="space-y-4">
+                                <h3 className="text-3xl font-bold text-white uppercase italic tracking-tight">Drag & Drop Secure Payload</h3>
+                                <p className="text-zinc-500 text-sm font-light max-w-md mx-auto">
+                                    Supports JPG, PNG, PDF, MP4, and RAW formats (Max 500MB)
                                 </p>
                             </div>
-                            <div className="pt-4 flex gap-3 justify-center text-[10px] font-mono text-slate-600 uppercase tracking-widest">
-                                <span>JPG</span>
-                                <span className="text-slate-800">•</span>
-                                <span>PNG</span>
-                                <span className="text-slate-800">•</span>
-                                <span>MP4</span>
-                                <span className="text-slate-800">•</span>
-                                <span>MOV</span>
+
+                            <label
+                                htmlFor="fileInput"
+                                className="inline-block px-12 py-5 bg-cyan-400 hover:bg-cyan-300 text-black rounded cursor-pointer font-bold uppercase text-xs tracking-[0.4em] transition-all"
+                            >
+                                Start Deep Scrubbing
+                            </label>
+
+                            <div className="flex items-center justify-center gap-12 pt-8">
+                                <div className="flex items-center gap-3 text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
+                                    <ShieldCheck className="w-4 h-4" /> End-to-End Encrypted
+                                </div>
+                                <div className="flex items-center gap-3 text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
+                                    <Lock className="w-4 h-4" /> Zero Logs Policy
+                                </div>
                             </div>
-                        </>
+                        </div>
                     )}
                 </div>
-            </div>
+            )}
 
-            {error && (
-                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-center font-mono text-sm animate-in fade-in slide-in-from-top-2 backdrop-blur-md">
-                    ⚠ ERROR: {error}
+            {uploading && (
+                <div className="bg-zinc-950 border border-white/5 rounded-[32px] p-8 lg:p-12 backdrop-blur-3xl relative overflow-hidden grid grid-cols-1 lg:grid-cols-4 gap-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                    {/* Left Sidebar Simulation */}
+                    <div className="hidden lg:flex flex-col border-r border-white/5 pr-8 space-y-10">
+                        <div className="space-y-6">
+                            <h4 className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.3em]">Recent Scans</h4>
+                            <div className="space-y-4">
+                                <div className="p-4 bg-cyan-400/5 border border-cyan-400/20 rounded-xl space-y-2">
+                                    <div className="text-xs font-bold text-white truncate">{file?.name}</div>
+                                    <div className="text-[9px] font-mono text-cyan-400 uppercase flex items-center gap-2">
+                                        <Loader2 className="w-3 h-3 animate-spin" /> Processing...
+                                    </div>
+                                </div>
+                                <div className="p-4 bg-white/5 border border-white/5 rounded-xl opacity-40">
+                                    <div className="text-xs font-bold text-zinc-400 truncate">raw_export_v2.jpg</div>
+                                    <div className="text-[9px] font-mono text-emerald-500 uppercase">Sanitized</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-6">
+                            <h4 className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.3em]">Navigation</h4>
+                            <nav className="space-y-4">
+                                <NavItem label="Clearance History" active={false} icon={<Activity className="w-4 h-4" />} />
+                                <NavItem label="Neural Logs" active={true} icon={<Server className="w-4 h-4" />} />
+                                <NavItem label="Privacy Shields" active={false} icon={<ShieldCheck className="w-4 h-4" />} />
+                            </nav>
+                        </div>
+                    </div>
+
+                    {/* Main Processing Hub */}
+                    <div className="lg:col-span-2 flex flex-col items-center justify-between min-h-[500px] py-4">
+                        <div className="w-full flex justify-between items-start mb-8">
+                            <div className="px-3 py-1 bg-cyan-500/10 border border-cyan-500/20 rounded text-[9px] font-mono text-cyan-400 uppercase tracking-widest">
+                                Secure Protocol v4.2
+                            </div>
+                            <div className="px-3 py-1 bg-red-500/10 border border-red-500/20 rounded text-[9px] font-mono text-red-500 uppercase tracking-widest font-bold">
+                                Emergency Stop
+                            </div>
+                        </div>
+
+                        <div className="text-center space-y-2">
+                            <h2 className="text-4xl font-bold uppercase italic tracking-tighter">
+                                Metaclean <span className="text-cyan-400 italic">Scrubbing</span>
+                            </h2>
+                            <p className="text-zinc-600 font-mono text-[10px] uppercase tracking-widest">
+                                Source: /internal/neural_link/{file?.name}
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-4 w-full my-8">
+                            <MetricBox label="Detected Threats" value="42" color="cyan" detail="+12 Sig" />
+                            <MetricBox label="Scrubbed Data" value="1.2" color="cyan" detail="MB" />
+                            <MetricBox label="Anonymity Score" value="94" color="cyan" detail="%" />
+                        </div>
+
+                        {/* Large Circular Dial */}
+                        <div className="relative w-72 h-72 flex items-center justify-center">
+                            <div className="absolute inset-0 bg-cyan-400/5 blur-[100px] rounded-full animate-pulse" />
+                            <svg className="w-full h-full -rotate-90">
+                                <circle cx="144" cy="144" r="120" stroke="currentColor" strokeWidth="2" fill="transparent" className="text-white/5" strokeDasharray="6 6" />
+                                <circle
+                                    cx="144" cy="144" r="120"
+                                    stroke="currentColor" strokeWidth="6"
+                                    strokeDasharray={2 * Math.PI * 120}
+                                    strokeDashoffset={2 * Math.PI * 120 * (1 - progress / 100)}
+                                    fill="transparent"
+                                    className="text-cyan-400 transition-all duration-500 ease-out"
+                                    strokeLinecap="round"
+                                />
+                            </svg>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                <span className="text-7xl font-bold italic tracking-tighter">{progress}%</span>
+                                <span className="text-[10px] font-mono uppercase tracking-[0.4em] text-cyan-400 mt-2">Scrubbing</span>
+                            </div>
+                        </div>
+
+                        <div className="w-full space-y-4 mt-8">
+                            <div className="flex justify-between items-end">
+                                <div className="space-y-1">
+                                    <h4 className="text-[11px] font-bold text-cyan-400 uppercase tracking-widest">AI Signature Erasure</h4>
+                                    <p className="text-[9px] text-zinc-600 font-mono">Removing Midjourney generation fingerprints...</p>
+                                </div>
+                                <div className="text-[9px] font-mono text-zinc-600 uppercase">TASK_ID: 99x_01</div>
+                            </div>
+                            <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                                <div className="h-full bg-cyan-400 w-2/3 animate-pulse" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right Panel Simulation */}
+                    <div className="hidden lg:flex flex-col border-l border-white/5 pl-8 space-y-8">
+                        <div>
+                            <h4 className="text-sm font-bold text-white uppercase italic tracking-tight mb-2">Metadata Analysis</h4>
+                            <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">Found vs Sanitized Comparison</p>
+                        </div>
+
+                        <div className="space-y-4">
+                            <AnalysisItem label="GPS Coordinates" value="40.7128° N" status="Redacted" danger />
+                            <AnalysisItem label="Device Profile" value="Sony Alpha 7 IV" status="Generic_HW" danger />
+                            <AnalysisItem label="AI Signature" value="Midjourney v6" status="Erased" danger />
+                            <AnalysisItem label="ICC Profile" value="Neutralized" status="OK" />
+                        </div>
+
+                        <div className="mt-auto space-y-3">
+                            <button className="w-full py-4 bg-zinc-900 border border-white/5 rounded-lg text-[10px] font-bold text-cyan-400 uppercase tracking-widest hover:bg-zinc-800 transition-all">
+                                Full Report (.pdf)
+                            </button>
+                            <button className="w-full py-4 bg-purple-500 hover:bg-purple-400 rounded-lg text-[10px] font-bold text-white uppercase tracking-widest transition-all shadow-[0_0_30px_rgba(188,0,255,0.2)]">
+                                Download Cleaned
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
+
+            {processedUrl && (
+                <div className="bg-zinc-950 border border-white/10 rounded-[40px] p-20 backdrop-blur-3xl text-center space-y-12 animate-in zoom-in-95 duration-700">
+                    <div className="w-32 h-32 bg-cyan-400/20 rounded-full flex items-center justify-center mx-auto border-4 border-cyan-400 relative">
+                        <div className="absolute inset-0 rounded-full bg-cyan-400 animate-ping opacity-20" />
+                        <CheckCircle className="w-16 h-16 text-cyan-400 relative z-10" />
+                    </div>
+                    <div className="space-y-4">
+                        <h2 className="text-5xl font-bold uppercase italic tracking-tighter">Identity Purged</h2>
+                        <p className="text-zinc-500 font-mono text-xs uppercase tracking-[0.5em]">Digital footprint successfully neutralized</p>
+                    </div>
+
+                    <div className="flex gap-6 justify-center pt-8">
+                        <a
+                            href={processedUrl}
+                            download={`clean-${file?.name || 'file'}`}
+                            className="px-12 py-5 bg-cyan-400 hover:bg-cyan-300 text-black rounded font-bold uppercase text-xs tracking-[0.4em] transition-all shadow-[0_0_50px_rgba(0,242,255,0.3)]"
+                        >
+                            Download_Clean_Node
+                        </a>
+                        <button
+                            onClick={() => {
+                                setFile(null);
+                                setProcessedUrl(null);
+                            }}
+                            className="px-12 py-5 bg-zinc-900 border border-white/5 text-zinc-400 rounded font-bold uppercase text-xs tracking-[0.4em] hover:bg-zinc-800 hover:text-white transition-all"
+                        >
+                            Cycle_Next
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {error && (
+                <div className="bg-red-950/20 border border-red-500/20 rounded-[32px] p-20 backdrop-blur-3xl text-center space-y-8 animate-in shake-in duration-500">
+                    <div className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center mx-auto border border-red-500/30">
+                        <AlertCircle className="w-12 h-12 text-red-500" />
+                    </div>
+                    <div className="space-y-3">
+                        <h2 className="text-3xl font-bold uppercase italic text-red-500">Err_System_Fatal</h2>
+                        <p className="text-red-400/60 font-mono text-xs uppercase tracking-widest leading-relaxed">
+                            {error} <br />
+                            Handshake protocol interrupted by external anomaly.
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => {
+                            setError(null);
+                            setFile(null);
+                        }}
+                        className="px-10 py-4 bg-red-600 hover:bg-red-500 text-white rounded font-bold uppercase text-[10px] tracking-[0.4em] transition-all"
+                    >
+                        Reboot_Process
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function NavItem({ label, active, icon }: any) {
+    return (
+        <div className={clsx(
+            "flex items-center gap-3 px-4 py-3 rounded-xl border transition-all cursor-pointer group",
+            active ? "bg-cyan-400/10 border-cyan-400/30 text-white" : "border-transparent text-zinc-500 hover:text-zinc-300"
+        )}>
+            <div className={clsx(active ? "text-cyan-400" : "text-zinc-600 group-hover:text-zinc-400")}>{icon}</div>
+            <span className="text-xs font-bold uppercase tracking-widest">{label}</span>
+        </div>
+    );
+}
+
+function MetricBox({ label, value, detail, color }: any) {
+    return (
+        <div className="bg-black/60 border border-white/5 p-5 rounded-2xl text-center space-y-1">
+            <div className="text-[8px] font-mono text-zinc-600 uppercase tracking-widest">{label}</div>
+            <div className="text-2xl font-bold italic tracking-tighter text-white">
+                {value} <span className="text-[10px] text-cyan-400/60 ml-1">{detail}</span>
+            </div>
+        </div>
+    );
+}
+
+function AnalysisItem({ label, value, status, danger }: any) {
+    return (
+        <div className="space-y-2 border-b border-white/5 pb-4 last:border-0">
+            <div className="flex justify-between items-center">
+                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">{label}</span>
+                {danger && <AlertCircle className="w-3 h-3 text-red-500" />}
+            </div>
+            <div className="flex justify-between items-baseline font-mono">
+                <span className={clsx("text-xs font-bold uppercase", danger ? "text-red-500" : "text-white")}>{value}</span>
+                <span className={clsx("text-[9px] uppercase font-bold", danger ? "text-red-600/80 italic" : "text-emerald-500")}>{status}</span>
+            </div>
         </div>
     );
 }

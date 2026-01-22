@@ -7,6 +7,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../../core/logger';
+import { statsService } from '../admin/stats.service';
 
 export class UploadController {
     async processSingle(req: FastifyRequest, reply: FastifyReply) {
@@ -26,7 +27,20 @@ export class UploadController {
             logger.info({ msg: 'File uploaded to temp', inputPath });
 
             // Process file (Image or Video)
-            const { outputPath, report } = await processingService.processFile(inputPath, data.mimetype);
+            const { outputPath, report, stats } = await processingService.processFile(inputPath, data.mimetype);
+
+            // Log success stats
+            statsService.logStat({
+                file_type: data.mimetype.startsWith('video/') ? 'video' : 'image',
+                mime_type: stats.mimeType,
+                size_bytes: stats.sizeBytes,
+                processing_time_ms: stats.processingTimeMs,
+                meta_gps_found: stats.meta_gps_found,
+                meta_device_found: stats.meta_device_found,
+                meta_ai_found: stats.meta_ai_found,
+                device_model: stats.device_model,
+                status: 'success'
+            });
 
             // Return processed image
             // For immediate download:
@@ -50,6 +64,25 @@ export class UploadController {
 
         } catch (error) {
             logger.error({ msg: 'Upload processing failed', error });
+
+            // Log error stats
+            try {
+                const fileStats = await fs.stat(inputPath).catch(() => ({ size: 0 }));
+                statsService.logStat({
+                    file_type: data.mimetype.startsWith('video/') ? 'video' : 'image',
+                    mime_type: data.mimetype,
+                    size_bytes: fileStats.size,
+                    processing_time_ms: 0,
+                    meta_gps_found: false,
+                    meta_device_found: false,
+                    meta_ai_found: false,
+                    device_model: null,
+                    status: 'error'
+                });
+            } catch (logErr) {
+                // Ignore logging errors
+            }
+
             // Try cleanup on error
             await fs.unlink(inputPath).catch(() => { });
             return reply.status(500).send({ error: 'Processing failed' });

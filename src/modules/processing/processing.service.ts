@@ -12,17 +12,20 @@ export class ProcessingService {
      * @param inputPath Path to the input file
      * @returns Path to the processed file
      */
-    async processImage(inputPath: string): Promise<{ outputPath: string; report: any }> {
+    async processImage(inputPath: string): Promise<{ outputPath: string; report: any; stats: any }> {
+        const startTime = Date.now();
         const tempDir = os.tmpdir();
         const ext = path.extname(inputPath) || '.jpg';
         const outputPath = path.join(tempDir, `processed-${uuidv4()}${ext}`);
 
         try {
+            const stats = await fs.stat(inputPath);
+            const sizeBytes = stats.size;
+
             logger.info({ msg: 'Starting metadata removal', inputPath });
 
             // Step 1: Analyze Metadata (Privacy Audit)
             const tags = await exiftool.read(inputPath) as any;
-            logger.info({ msg: 'Detected Tags', tags }); // Verbose logging
 
             // Deep scan for AI signatures in ANY tag
             const aiKeywords = [/Midjourney/i, /Stable Diffusion/i, /DALL\.E/i, /Steps: \d+/, /Cfg scale:/i, /Negative prompt:/i];
@@ -36,63 +39,89 @@ export class ProcessingService {
                 ai: hasAiSignature
             };
 
-            // Step 2: Strip all tags using command line argument directly
-            // Added -png:all= to specifically target Stable Diffusion/AI parameters in PNG chunks
+            // Step 2: Strip all tags
             await exiftool.write(inputPath, {}, ['-all=', '-png:all=', '-overwrite_original']);
 
-            // Step 3: Re-encode with Sharp to sanitize image structure (remove hidden chunks)
-            // This is the "Privacy-First" guarantee: Re-create the image data.
+            // Step 3: Re-encode with Sharp
             await sharp(inputPath)
                 .rotate()
-                // Removed .withMetadata() to ensure absolutely NO metadata is carried over.
-                // Density will default to 72 or image default, which is fine for web.
                 .toFile(outputPath);
 
             logger.info({ msg: 'Image processed successfully', outputPath, report });
-            return { outputPath, report };
+
+            return {
+                outputPath,
+                report,
+                stats: {
+                    processingTimeMs: Date.now() - startTime,
+                    sizeBytes,
+                    mimeType: 'image/jpeg', // approximate, or use external detection if needed
+                    meta_gps_found: report.gps,
+                    meta_device_found: !!report.device,
+                    meta_ai_found: report.ai,
+                    device_model: report.device
+                }
+            };
 
         } catch (error: any) {
-            logger.error({
-                msg: 'Error processing image',
-                error: error.message || error,
-                stack: error.stack
-            });
+            logger.error({ msg: 'Error processing image', error: error.message });
             throw error;
         }
     }
 
-    async processVideo(inputPath: string): Promise<{ outputPath: string; report: any }> {
+    async processVideo(inputPath: string): Promise<{ outputPath: string; report: any; stats: any }> {
+        const startTime = Date.now();
         const tempDir = os.tmpdir();
         const ext = path.extname(inputPath) || '.mp4';
         const outputPath = path.join(tempDir, `processed-${uuidv4()}${ext}`);
 
-        return new Promise((resolve, reject) => {
-            const ffmpeg = require('fluent-ffmpeg');
-            logger.info({ msg: 'Starting video metadata removal', inputPath });
+        try {
+            const fileStats = await fs.stat(inputPath);
+            const sizeBytes = fileStats.size;
 
-            ffmpeg(inputPath)
-                .outputOptions('-map_metadata', '-1')
-                .outputOptions('-c', 'copy')
-                .save(outputPath)
-                .on('end', () => {
-                    logger.info({ msg: 'Video processed successfully', outputPath });
-                    resolve({
-                        outputPath,
-                        report: { gps: false, device: null, ai: false }
+            return new Promise((resolve, reject) => {
+                const ffmpeg = require('fluent-ffmpeg');
+                logger.info({ msg: 'Starting video metadata removal', inputPath });
+
+                ffmpeg(inputPath)
+                    .outputOptions('-map_metadata', '-1')
+                    .outputOptions('-c', 'copy')
+                    .save(outputPath)
+                    .on('end', () => {
+                        logger.info({ msg: 'Video processed successfully', outputPath });
+                        resolve({
+                            outputPath,
+                            report: { gps: false, device: null, ai: false },
+                            stats: {
+                                processingTimeMs: Date.now() - startTime,
+                                sizeBytes,
+                                mimeType: 'video/mp4',
+                                meta_gps_found: false,
+                                meta_device_found: false,
+                                meta_ai_found: false,
+                                device_model: null
+                            }
+                        });
+                    })
+                    .on('error', (err: any) => {
+                        logger.error({ msg: 'Video processing error', err });
+                        reject(err);
                     });
-                })
-                .on('error', (err: any) => {
-                    logger.error({ msg: 'Video processing error', err });
-                    reject(err);
-                });
-        });
+            });
+        } catch (error) {
+            throw error;
+        }
     }
 
-    async processFile(inputPath: string, mimetype: string): Promise<{ outputPath: string; report: any }> {
+    async processFile(inputPath: string, mimetype: string): Promise<{ outputPath: string; report: any; stats: any }> {
         if (mimetype.startsWith('video/')) {
-            return this.processVideo(inputPath);
+            const result = await this.processVideo(inputPath);
+            result.stats.mimeType = mimetype; // Update with actual mime
+            return result;
         }
-        return this.processImage(inputPath);
+        const result = await this.processImage(inputPath);
+        result.stats.mimeType = mimetype;
+        return result;
     }
 
     async cleanup(filePath: string) {

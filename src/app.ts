@@ -5,6 +5,7 @@ import { logger } from './core/logger';
 import cors from '@fastify/cors';
 import multipart from '@fastify/multipart';
 import { uploadRoutes } from './modules/upload/upload.routes';
+import { adminRoutes } from './modules/admin/admin.routes';
 
 export const buildApp = () => {
     const server = Fastify({
@@ -33,6 +34,7 @@ export const buildApp = () => {
         }
     });
     server.register(uploadRoutes);
+    server.register(adminRoutes, { prefix: '/admin' });
 
     // Root Endpoint
     server.get('/', async () => {
