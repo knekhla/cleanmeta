@@ -34,6 +34,8 @@ export default function DragDrop() {
         if (selectedFile) setFile(selectedFile);
     };
 
+    const [analysisReport, setAnalysisReport] = useState<{ gps: boolean; device: string | null; ai: boolean } | null>(null);
+
     const uploadFile = async () => {
         if (!file) return;
         setUploading(true);
@@ -43,9 +45,8 @@ export default function DragDrop() {
         // Simulation of progress based on Image 2
         const interval = setInterval(() => {
             setProgress(prev => {
-                if (prev >= 68) {
-                    clearInterval(interval);
-                    return 68;
+                if (prev >= 95) {
+                    return 95;
                 }
                 return prev + 2;
             });
@@ -55,20 +56,37 @@ export default function DragDrop() {
         formData.append('file', file);
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/process/single`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3003'}/api/process/single`, {
                 method: 'POST',
                 body: formData,
             });
 
             if (!response.ok) throw new Error('System Fail: Handshake Rejected');
 
-            const data = await response.json();
+            // Metadata Reports from Headers
+            const gpsFound = response.headers.get('X-Clean-GPS') === 'true';
+            const aiFound = response.headers.get('X-Clean-AI') === 'true';
+            const device = response.headers.get('X-Clean-Device') ? decodeURIComponent(response.headers.get('X-Clean-Device')!) : null;
 
-            // Wait for visual progress to hit 68 then finish
+            setAnalysisReport({
+                gps: gpsFound,
+                device: device,
+                ai: aiFound
+            });
+
+            // Handle Blob Response
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+
+            // Complete the progress bar
+            clearInterval(interval);
+            setProgress(100);
+
+            // Short delay to show 100%
             setTimeout(() => {
-                setProcessedUrl(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${data.url}`);
+                setProcessedUrl(url);
                 setUploading(false);
-            }, 2000);
+            }, 500);
 
         } catch (err: any) {
             setError(err.message);
@@ -249,10 +267,10 @@ export default function DragDrop() {
                         </div>
 
                         <div className="space-y-4 font-mono">
-                            <AnalysisItem label="GPS Coordinates" value="40.7128° N" status="DESTROYED" danger />
-                            <AnalysisItem label="Device ID" value="Sony Alpha 7" status="OBFUSCATED" danger />
-                            <AnalysisItem label="AI Pattern" value="Midjourney" status="ERASED" danger />
-                            <AnalysisItem label="ICC Profile" value="Rebuilt" status="CLEAN" />
+                            <AnalysisItem label="GPS Coordinates" value="Scanning..." status="PENDING" />
+                            <AnalysisItem label="Device ID" value="Extracting..." status="PENDING" />
+                            <AnalysisItem label="AI Pattern" value="Analyzing..." status="PENDING" />
+                            <AnalysisItem label="ICC Profile" value="Queued" status="WAITING" />
                         </div>
 
                         <div className="mt-auto space-y-3">
@@ -265,7 +283,7 @@ export default function DragDrop() {
             )}
 
             {processedUrl && (
-                <div className="bg-[#050505] border border-lime-400/30 p-20 text-center space-y-12 animate-in zoom-in-95 duration-500 shadow-[0_0_100px_rgba(204,255,0,0.1)]">
+                <div className="bg-[#050505] border border-lime-400/30 p-12 text-center space-y-12 animate-in zoom-in-95 duration-500 shadow-[0_0_100px_rgba(204,255,0,0.1)]">
                     <div className="w-32 h-32 bg-lime-400 rounded-full flex items-center justify-center mx-auto relative animate-bounce">
                         <CheckCircle className="w-16 h-16 text-black relative z-10" />
                     </div>
@@ -273,6 +291,30 @@ export default function DragDrop() {
                         <h2 className="text-6xl font-bold uppercase italic tracking-tighter text-white">CLEANSED</h2>
                         <p className="text-zinc-500 font-mono text-xs uppercase tracking-[0.5em]">Zero Tracers Remaining</p>
                     </div>
+
+                    {/* Report Card */}
+                    {analysisReport && (
+                        <div className="max-w-md mx-auto grid grid-cols-1 gap-4 border-t border-b border-zinc-800 py-8">
+                            <AnalysisItem
+                                label="Geospatial Data"
+                                value={analysisReport.gps ? 'COORDINATES ERASED' : 'NO DATA FOUND'}
+                                status={analysisReport.gps ? 'CLEANED' : 'SAFE'}
+                                danger={analysisReport.gps}
+                            />
+                            <AnalysisItem
+                                label="Device footprint"
+                                value={analysisReport.device ? 'HARDWARE ID MASKED' : 'NO SIG FOUND'}
+                                status={analysisReport.device ? 'OBFUSCATED' : 'SAFE'}
+                                danger={!!analysisReport.device}
+                            />
+                            <AnalysisItem
+                                label="AI Signature"
+                                value={analysisReport.ai ? 'PATTERN NOISE INJECTED' : 'HUMAN VERIFIED'}
+                                status={analysisReport.ai ? 'NEUTRALIZED' : 'SAFE'}
+                                danger={analysisReport.ai}
+                            />
+                        </div>
+                    )}
 
                     <div className="flex gap-6 justify-center pt-8">
                         <a
