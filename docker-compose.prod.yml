@@ -22,8 +22,8 @@ services:
       - root_default
     labels:
       - "traefik.enable=true"
-      # API Routing: Matches /api prefix
-      - "traefik.http.routers.cleanmeta-api.rule=Host(`cleanmeta.io`, `www.cleanmeta.io`) && PathPrefix(`/api`, `/health`)"
+      # API Routing: Matches /api prefix on subdomain
+      - "traefik.http.routers.cleanmeta-api.rule=Host(`cleanmeta.artifyapi.com`) && PathPrefix(`/api`, `/health`)"
       - "traefik.http.routers.cleanmeta-api.entrypoints=web,websecure"
       - "traefik.http.routers.cleanmeta-api.tls.certresolver=myresolver"
       - "traefik.http.services.cleanmeta-api.loadbalancer.server.port=3000"
@@ -36,23 +36,23 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: http://217.15.171.234:3003
+        NEXT_PUBLIC_API_URL: https://cleanmeta.artifyapi.com
         NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_KEY}
-        NEXT_PUBLIC_APP_URL: http://217.15.171.234:3004
+        NEXT_PUBLIC_APP_URL: https://cleanmeta.artifyapi.com
     restart: always
     ports:
       - "3004:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=http://217.15.171.234:3003
+      - NEXT_PUBLIC_API_URL=https://cleanmeta.artifyapi.com
       - NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}
       - NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_KEY}
     networks:
       - root_default
     labels:
       - "traefik.enable=true"
-      # Web Routing: Matches everything else
-      - "traefik.http.routers.cleanmeta-web.rule=Host(`cleanmeta.io`, `www.cleanmeta.io`)"
+      # Web Routing: Matches subdomain
+      - "traefik.http.routers.cleanmeta-web.rule=Host(`cleanmeta.artifyapi.com`)"
       - "traefik.http.routers.cleanmeta-web.entrypoints=web,websecure"
       - "traefik.http.routers.cleanmeta-web.tls.certresolver=myresolver"
       - "traefik.http.services.cleanmeta-web.loadbalancer.server.port=3000"
