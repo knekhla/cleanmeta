@@ -34,37 +34,48 @@ export default function Login() {
                                 variables: {
                                     default: {
                                         colors: {
-                                            brand: '#06b6d4', // Cyan
-                                            brandAccent: '#0891b2',
-                                            brandButtonText: 'white',
+                                            brand: '#a3e635', // Lime-400
+                                            brandAccent: '#84cc16', // Lime-500
+                                            brandButtonText: 'black',
                                             defaultButtonBackground: '#18181b', // Zinc 900
                                             defaultButtonBackgroundHover: '#27272a',
                                             inputBackground: '#09090b', // Zinc 950
                                             inputBorder: '#27272a',
                                             inputText: 'white',
                                             inputLabelText: '#a1a1aa',
+                                            anchorTextColor: '#a1a1aa',
+                                            anchorTextHoverColor: '#a3e635',
                                         },
                                         radii: {
-                                            borderRadiusButton: '4px',
-                                            inputBorderRadius: '4px',
+                                            borderRadiusButton: '0px', // Brutalist
+                                            inputBorderRadius: '0px',
                                         },
                                         fonts: {
-                                            bodyFontFamily: `ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace`,
-                                            buttonFontFamily: `ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace`,
+                                            bodyFontFamily: `var(--font-jetbrains-mono), monospace`,
+                                            buttonFontFamily: `var(--font-jetbrains-mono), monospace`,
                                         }
                                     },
                                 },
                                 className: {
-                                    button: 'uppercase tracking-widest font-bold !border-white/10 hover:!border-cyan-500/50 transition-colors',
-                                    input: '!bg-black/50 !border-white/10 focus:!border-cyan-500/50 transition-colors',
-                                    label: 'uppercase tracking-wider text-xs',
+                                    button: '!font-bold !uppercase !tracking-widest !border !border-lime-400/20 hover:!border-lime-400 transition-all',
+                                    input: '!bg-black/50 !border-zinc-800 focus:!border-lime-400/50 transition-colors !font-mono',
+                                    label: '!uppercase !tracking-widest !text-[10px] !font-bold',
+                                    anchor: '!text-[10px] !uppercase !tracking-widest hover:!text-lime-400 transition-colors',
                                 }
                             }}
                             theme="dark"
                             providers={[]}
-                            showLinks={false}
-                            redirectTo={`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/admin/dashboard`}
+                            // showLinks={true} // Default is true, implied
+                            redirectTo={`${process.env.NEXT_PUBLIC_APP_URL || 'https://cleanmeta.artifyapi.com'}/dashboard`}
                         />
+
+                        {/* Custom Forgot Password Link Override if needed, but Supabase UI has one. 
+                            However, since I made a custom page, I'll add a link here just in case 
+                            users prefer a dedicated page or if the internal flow is confusing. 
+                            Actually, the internal flow sends a magic link or reset email. 
+                            My custom page does the same `resetPasswordForEmail`. 
+                            I'll leave the Auth component to handle it for consistency. 
+                        */}
                     </div>
                 </div>
             </div>

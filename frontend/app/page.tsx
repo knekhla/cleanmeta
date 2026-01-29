@@ -1,12 +1,49 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import DragDrop from '@/components/DragDrop';
 import { ShieldCheck, Zap, Laptop, MapPin, Cpu, Check, AlertTriangle } from 'lucide-react';
 import clsx from 'clsx';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
+  const [user, setUser] = useState<any>(null);
+  const supabase = createClient();
+  const router = useRouter();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
+  }, []);
+
+  const handleCheckout = async (priceId: string) => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/payment/create-checkout-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({ priceId })
+      });
+
+      const data = await res.json();
+      if (data.url) {
+        window.location.assign(data.url);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#030303] text-white font-sans overflow-hidden relative selection:bg-lime-400/30 selection:text-black">
       <div className="absolute inset-0 bg-grid z-0 opacity-20 pointer-events-none text-lime-400" />
@@ -95,11 +132,13 @@ export default function Home() {
               price="19"
               featured={true}
               features={["Unlimited Scans", "AI De-Identification", "Priority Processing", "API Access"]}
+              onSubscribe={() => handleCheckout('price_1Suqd6EuH78mdtSzwvgc6OHr')}
             />
             <TierCard
               title="PHANTOM"
               price="99"
               features={["Dedicated Node", "Custom Patterns", "SSO Integration", "SLA: 99.9%"]}
+              onSubscribe={() => handleCheckout('price_1Suqd6EuH78mdtSzwvgc6OHr')} // Using same ID for now as placeholder
             />
           </div>
         </div>
@@ -165,7 +204,7 @@ function EngineCard({ title, desc, image, icon }: any) {
   );
 }
 
-function TierCard({ title, price, features, featured }: any) {
+function TierCard({ title, price, features, featured, onSubscribe }: any) {
   return (
     <div className={clsx(
       "relative p-8 border flex flex-col h-full group bg-black transition-all duration-300",
@@ -195,12 +234,14 @@ function TierCard({ title, price, features, featured }: any) {
         ))}
       </ul>
 
-      <button className={clsx(
-        "w-full py-4 uppercase text-[10px] font-bold tracking-[0.2em] transition-all border",
-        featured
-          ? "bg-lime-400 text-black border-lime-400 hover:bg-lime-300"
-          : "bg-transparent text-white border-white/20 hover:border-white hover:bg-white hover:text-black"
-      )}>
+      <button
+        onClick={onSubscribe}
+        className={clsx(
+          "w-full py-4 uppercase text-[10px] font-bold tracking-[0.2em] transition-all border",
+          featured
+            ? "bg-lime-400 text-black border-lime-400 hover:bg-lime-300"
+            : "bg-transparent text-white border-white/20 hover:border-white hover:bg-white hover:text-black"
+        )}>
         {featured ? "Engage" : "Init"}
       </button>
     </div>

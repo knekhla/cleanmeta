@@ -6,6 +6,8 @@ import cors from '@fastify/cors';
 import multipart from '@fastify/multipart';
 import { uploadRoutes } from './modules/upload/upload.routes';
 import { adminRoutes } from './modules/admin/admin.routes';
+import { paymentRoutes } from './modules/payment/payment.routes';
+import { userRoutes } from './modules/user/user.routes';
 
 export const buildApp = () => {
     const server = Fastify({
@@ -34,6 +36,8 @@ export const buildApp = () => {
         }
     });
     server.register(uploadRoutes);
+    server.register(paymentRoutes);
+    server.register(userRoutes);
     server.register(adminRoutes, { prefix: '/api/admin' });
 
     // Root Endpoint

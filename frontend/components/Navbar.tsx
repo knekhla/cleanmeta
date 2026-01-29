@@ -59,6 +59,9 @@ export default function Navbar() {
                                 <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest hidden sm:block">
                                     Auth_ID: <span className="text-lime-400">{user.email?.split('@')[0]}</span>
                                 </span>
+                                <Link href="/dashboard" className="text-[10px] font-bold text-white hover:text-lime-400 uppercase tracking-widest transition-colors font-mono border-b border-transparent hover:border-lime-400">
+                                    Dashboard
+                                </Link>
                                 <button
                                     onClick={handleSignOut}
                                     className="p-2 rounded border border-zinc-800 hover:border-red-500/50 hover:bg-red-950/30 text-zinc-500 hover:text-red-500 transition-all font-mono text-xs"
