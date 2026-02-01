@@ -74,7 +74,37 @@ export default function Home() {
           </p>
         </div>
 
-        <DragDrop />
+        {/* DragDrop Replacement - Secure CTA */}
+        <div className="w-full max-w-4xl mx-auto my-24 border border-zinc-800 bg-[#0A0A0A] p-12 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-50">
+            <ShieldCheck className="w-24 h-24 text-zinc-900" />
+          </div>
+          <div className="relative z-10 text-center space-y-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-zinc-900 border border-zinc-700 text-[10px] font-mono tracking-widest text-zinc-400 uppercase">
+              <div className="w-2 h-2 bg-orange-500 animate-pulse rounded-full" />
+              Access Control: RESTRICTED
+            </div>
+
+            <div className="space-y-4">
+              <h2 className="text-3xl font-bold uppercase italic text-white tracking-tight">
+                Protocol Initiation Required
+              </h2>
+              <p className="text-zinc-500 font-mono text-xs uppercase tracking-[0.2em] max-w-lg mx-auto leading-relaxed">
+                Secure scrubbing requires verified identity. <br />
+                Initialize session to access the decontamination chamber.
+              </p>
+            </div>
+
+            <div className="flex justify-center gap-6">
+              <Link href="/login" className="px-8 py-4 bg-lime-400 hover:bg-lime-300 text-black font-bold uppercase text-xs tracking-[0.2em] transition-all flex items-center gap-2 shadow-[4px_4px_0_rgba(255,255,255,0.2)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none">
+                Initialize Session <Zap className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Visual Flair */}
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-lime-400/50 to-transparent" />
+        </div>
 
         {/* Triple Stat Row - Industrial Style */}
         <div className="mt-32 grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -247,3 +277,4 @@ function TierCard({ title, price, features, featured, onSubscribe }: any) {
     </div>
   );
 }
+

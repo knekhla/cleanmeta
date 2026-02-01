@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
+import DragDrop from '@/components/DragDrop';
 import { createClient } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { ShieldCheck, Key, Copy, Trash2, Plus, Zap, Activity, Clock } from 'lucide-react';
@@ -98,6 +99,19 @@ export default function Dashboard() {
                     </p>
                 </header>
 
+                {/* Decontamination Chamber */}
+                <div className="space-y-6">
+                    <div className="flex justify-between items-end border-b border-zinc-800 pb-4">
+                        <h2 className="text-2xl font-bold uppercase italic text-white flex gap-3 items-center">
+                            <Activity className="w-5 h-5 text-lime-400" /> Active Workspace (Decontamination)
+                        </h2>
+                        <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest animate-pulse">
+                            Secure_Link: ESTABLISHED
+                        </div>
+                    </div>
+                    <DragDrop />
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     {/* Access Card */}
                     <div className="col-span-1 bg-[#050505] border border-zinc-800 p-8 space-y-6">
@@ -168,16 +182,69 @@ export default function Dashboard() {
                 {/* Integration Guide for n8n */}
                 <div className="bg-zinc-900/20 border border-zinc-800 p-8 space-y-6">
                     <h3 className="text-xl font-bold uppercase italic text-white flex gap-3 items-center">
-                        <Zap className="w-5 h-5 text-orange-500" /> Workflow Integration
+                        <Zap className="w-5 h-5 text-orange-500" /> n8n Complete Workflow
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 font-mono text-xs text-zinc-400">
+                    <p className="text-zinc-500 font-mono text-xs uppercase tracking-widest">
+                        Full automation: Generate Grid → Wait → Upscale U1 → Get HD Image
+                    </p>
+
+                    <div className="space-y-8 font-mono text-xs text-zinc-400">
+                        {/* Step 1 */}
                         <div className="space-y-2">
-                            <div className="uppercase tracking-widest text-zinc-500 font-bold">Endpoint</div>
-                            <div className="bg-black p-3 border border-zinc-800 text-lime-400 break-all">POST {process.env.NEXT_PUBLIC_API_URL}/api/process/single</div>
+                            <div className="uppercase tracking-widest text-lime-400 font-bold border-b border-lime-400/20 pb-1 w-fit">STEP 1: HTTP Request (POST /v1/imagine)</div>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <div><span className="text-zinc-500">Method:</span> POST</div>
+                                    <div><span className="text-zinc-500">URL:</span> https://api.artifyapi.com/v1/imagine</div>
+                                    <div><span className="text-zinc-500">Headers:</span></div>
+                                    <div className="pl-4 text-zinc-500">x-api-key: sk_b43334218a97f664c54f36abd3afcfb295f897d282b2b6df</div>
+                                    <div className="pl-4 text-zinc-500">Content-Type: application/json</div>
+                                </div>
+                                <div className="space-y-1">
+                                    <div><span className="text-zinc-500">Body (JSON):</span> {'{"prompt": "your image description here"}'}</div>
+                                    <div><span className="text-zinc-500">Returns:</span> {'{"jobId": "xxx-xxx"}'}</div>
+                                </div>
+                            </div>
                         </div>
+
+                        {/* Step 2 */}
                         <div className="space-y-2">
-                            <div className="uppercase tracking-widest text-zinc-500 font-bold">Authentication</div>
-                            <div className="bg-black p-3 border border-zinc-800 break-all">Header: <span className="text-orange-500">x-api-key</span> = YOUR_KEY</div>
+                            <div className="uppercase tracking-widest text-lime-400 font-bold border-b border-lime-400/20 pb-1 w-fit">STEP 2: Wait Node</div>
+                            <div>Wait 60 seconds for image generation to complete.</div>
+                        </div>
+
+                        {/* Step 3 */}
+                        <div className="space-y-2">
+                            <div className="uppercase tracking-widest text-lime-400 font-bold border-b border-lime-400/20 pb-1 w-fit">STEP 3: HTTP Request (GET /v1/jobs/:id)</div>
+                            <div><span className="text-zinc-500">Method:</span> GET</div>
+                            <div><span className="text-zinc-500">URL:</span> https://api.artifyapi.com/v1/jobs/{'{{$json.jobId}}'}</div>
+                            <div><span className="text-zinc-500">Headers:</span> x-api-key: sk_b43334218a97f664c54f36abd3afcfb295f897d282b2b6df</div>
+                            <div><span className="text-zinc-500">Check:</span> status == "completed"</div>
+                        </div>
+
+                        {/* Step 4 */}
+                        <div className="space-y-2">
+                            <div className="uppercase tracking-widest text-lime-400 font-bold border-b border-lime-400/20 pb-1 w-fit">STEP 4: HTTP Request (POST /v1/upscale)</div>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <div><span className="text-zinc-500">Method:</span> POST</div>
+                                    <div><span className="text-zinc-500">URL:</span> https://api.artifyapi.com/v1/upscale</div>
+                                    <div><span className="text-zinc-500">Headers:</span></div>
+                                    <div className="pl-4 text-zinc-500">x-api-key: sk_b43334218a97f664c54f36abd3afcfb295f897d282b2b6df</div>
+                                </div>
+                                <div className="space-y-1">
+                                    <div><span className="text-zinc-500">Body (JSON):</span> {'{"job_id": "{{$json.id}}", "index": 1}'}</div>
+                                    <div><span className="text-zinc-500">Returns:</span> {'{"id": "upscale-job-id"}'}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Step 5 */}
+                        <div className="space-y-2">
+                            <div className="uppercase tracking-widest text-lime-400 font-bold border-b border-lime-400/20 pb-1 w-fit">STEP 5: Wait + Get Final Result</div>
+                            <div>Wait: 60 seconds</div>
+                            <div><span className="text-zinc-500">Then GET:</span> https://api.artifyapi.com/v1/jobs/{'{{$json.id}}'}</div>
+                            <div><span className="text-zinc-500">Result:</span> result.image_url = Your HD 2048x2048 image!</div>
                         </div>
                     </div>
                 </div>
